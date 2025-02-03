@@ -6,6 +6,7 @@
 volatile uint32_t last_time = 0;    // variáveis auxiliares para deboucing
 volatile uint32_t current_time = 0; // variáveis auxiliares para deboucing
 volatile size_t index_led = 0;      // variável para interação de acionamento dos LEDs
+volatile bool button_pressed = false;  // status de botão pressionado
 
 uint8_t onoff_led_mask[3] = {0x07, 0x06, 0x04}; // máscadas de acionamento dos LEDs - 0111 | 0110 | 0100
 
@@ -14,7 +15,7 @@ bool repeating_timer_callback(struct repeating_timer *t)
 {
     printf("repeating_timer_callback\n");
 
-    if (index_led < 3) // condicional de confirmação de pressionamento do botão e interação do loop
+    if (button_pressed && index_led < 3) // condicional de confirmação de pressionamento do botão e interação do loop
     {
 
         // aplica a máscara de acionamento dos LEDs de acordo o indexes correspondentes
@@ -25,6 +26,7 @@ bool repeating_timer_callback(struct repeating_timer *t)
     else
     {
         index_led = 0;
+        button_pressed = false;
         gpio_put_masked((0x07 << 11), (0x00 << 11));
     }
 
@@ -45,6 +47,7 @@ void gpio_button_callback(uint gpio, uint32_t events)
 
         if (gpio_get(BUTTON_A) == 0) // condicional que verifica o nível lógico do botão
         {
+            button_pressed = true;
             printf("gpio_button_callback\n");
         }
     }
