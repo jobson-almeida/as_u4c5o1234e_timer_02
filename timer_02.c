@@ -108,11 +108,11 @@ int main()
     gpio_set_dir(BUTTON_A, GPIO_IN);
     gpio_pull_up(BUTTON_A);
 
-    // habilita uma interrupção para indentificar quando o botão for pressionado
-    gpio_set_irq_enabled_with_callback(BUTTON_A, GPIO_IRQ_EDGE_FALL, true, &gpio_button_callback);
-
     // habilita o timer usado nos acionamentos dos LEDs.
     add_repeating_timer_ms(FAST_DELAY_MS, repeating_timer_callback, NULL, &timer);
+    
+    // habilita uma interrupção para indentificar quando o botão for pressionado
+    gpio_set_irq_enabled_with_callback(BUTTON_A, GPIO_IRQ_EDGE_FALL, true, &gpio_button_callback);
 
     while (true)
     {
