@@ -5,9 +5,9 @@
 #define FAST_DELAY_MS 100
 #define SLOW_DELAY_MS 3000
 
-volatile uint32_t last_time = 0;    // variáveis auxiliares para deboucing
-volatile uint32_t current_time = 0; // variáveis auxiliares para deboucing
-volatile size_t index_led = 0; // variável para interação de acionamento dos LEDs
+volatile uint32_t last_time = 0;       // variáveis auxiliares para deboucing
+volatile uint32_t current_time = 0;    // variáveis auxiliares para deboucing
+volatile size_t index_led = 0;         // variável para interação de acionamento dos LEDs
 volatile bool button_pressed = false;  // status de botão pressionado
 volatile bool change_delay_ms = false; // status para alteração do delay_ms da função do timer
 
@@ -21,13 +21,13 @@ bool repeating_timer_callback(struct repeating_timer *t);
 // alarme
 int64_t turn_off_callback(alarm_id_t id, void *user_data)
 {
-       gpio_put_masked((0x07 << 11), (0x00 << 11)); // máscara que aplica o nível lógico 0 aos três LEDs
+    gpio_put_masked((0x07 << 11), (0x00 << 11)); // máscara que aplica o nível lógico 0 aos três LEDs
 
     // DEBUGGING
     current_time = to_us_since_boot(get_absolute_time());
     printf("%d\n", current_time - last_time);
 
-    button_pressed = false; // atualiza a variável que representado o status de pressionamento do botão 
+    button_pressed = false; // atualiza a variável que representado o status de pressionamento do botão
     index_led = 0;          // atualiza varíavel de indexes das maáscaras de acionamento dos LEDs
 
     cancel_repeating_timer(&timer);                                                // cancela o timer atual da função 'add_repeating_timer_ms'
@@ -60,7 +60,7 @@ bool repeating_timer_callback(struct repeating_timer *t)
         gpio_put_masked((0x07 << 11), (onoff_led_mask[index_led] << 11));
 
         index_led++;
-    } 
+    }
 
     return true;
 }
@@ -108,7 +108,6 @@ int main()
 
     while (true)
     {
-        printf("Hello, world!\n");
-        sleep_ms(1000);
+        tight_loop_contents(); // função que otimiza o loop vazio para evitar consumo excessivo de CPU.
     }
 }
