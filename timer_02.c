@@ -3,6 +3,18 @@
 
 #define BUTTON_A 5
 
+// interrupção
+void gpio_button_callback(uint gpio, uint32_t events)
+{
+
+    if (gpio_get(BUTTON_A) == 0) // condicional que verifica o nível lógico do botão
+    {
+        printf("gpio_button_callback\n");
+    }
+
+    gpio_acknowledge_irq(gpio, events); // limpa a interrupção
+}
+
 int main()
 {
     stdio_init_all();
@@ -15,6 +27,9 @@ int main()
     gpio_init(BUTTON_A);
     gpio_set_dir(BUTTON_A, GPIO_IN);
     gpio_pull_up(BUTTON_A);
+
+   // habilita uma interrupção para indentificar quando o botão for pressionado
+    gpio_set_irq_enabled_with_callback(BUTTON_A, GPIO_IRQ_EDGE_FALL, true, &gpio_button_callback);
 
     while (true)
     {
