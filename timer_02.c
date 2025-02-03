@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
+#include "hardware/timer.h"
 
 #define BUTTON_A 5
 #define FAST_DELAY_MS 100
@@ -32,12 +33,16 @@ int64_t turn_off_callback(alarm_id_t id, void *user_data)
     cancel_repeating_timer(&timer);                                                // cancela o timer atual da função 'add_repeating_timer_ms'
     add_repeating_timer_ms(FAST_DELAY_MS, repeating_timer_callback, NULL, &timer); // atualiza o timer da função 'add_repeating_timer_ms' para um novo pressionamento do botão
 
+    // printf("turn_off_callback\n");//DEBUGGING
+
     return 0; // finaliza o alarme
 }
 
 // timer de acionamento dos LEDs
 bool repeating_timer_callback(struct repeating_timer *t)
-{ 
+{
+    // printf("repeating_timer_callback\n");//DEBUGGING
+
     // condicional de confirmação de detecção de pressionamento do botão e alteração do delay de acionamento dos LEDs
     if (button_pressed && change_delay_ms)
     {
@@ -48,6 +53,8 @@ bool repeating_timer_callback(struct repeating_timer *t)
         // utilizar uma combinação de valores permite uma fluidez e sincronia ao primeiro acionamento
         add_repeating_timer_ms(SLOW_DELAY_MS, repeating_timer_callback, NULL, &timer);
         add_alarm_in_ms(9000, turn_off_callback, NULL, false); // adiciona um alarme com delay de acionamento de 9 segundos
+
+        // printf("add_alarm_in_ms\n");//DEBUGGING
     }
 
     if (button_pressed && index_led < 3) // condicional de confirmação de pressionamento do botão e interação do loop
@@ -55,7 +62,7 @@ bool repeating_timer_callback(struct repeating_timer *t)
 
         // aplica a máscara de acionamento dos LEDs de acordo o indexes correspondentes
         gpio_put_masked((0x07 << 11), (onoff_led_mask[index_led] << 11));
-   
+
         // current_time = to_us_since_boot(get_absolute_time());
         // if (index_led > 0)
         //     printf("%d\n", (current_time - last_time) / 1000); // DEBUGGING: mede o tempo de cada acionamento
@@ -82,7 +89,7 @@ void gpio_button_callback(uint gpio, uint32_t events)
         {
             button_pressed = true;
             change_delay_ms = true;
-            printf("gpio_button_callback\n");
+            // printf("gpio_button_callback\n"); //DEBUGGING
         }
     }
     gpio_acknowledge_irq(gpio, events); // limpa a interrupção
