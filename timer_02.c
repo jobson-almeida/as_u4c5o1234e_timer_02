@@ -7,7 +7,15 @@
 volatile uint32_t last_time = 0;
 volatile uint32_t current_time = 0;
 
-// interrupção
+// timer de acionamento dos LEDs
+bool repeating_timer_callback(struct repeating_timer *t)
+{
+    printf("repeating_timer_callback\n");
+
+    return true;
+}
+
+// interrupção do botão
 void gpio_button_callback(uint gpio, uint32_t events)
 {
 
@@ -42,6 +50,10 @@ int main()
 
     // habilita uma interrupção para indentificar quando o botão for pressionado
     gpio_set_irq_enabled_with_callback(BUTTON_A, GPIO_IRQ_EDGE_FALL, true, &gpio_button_callback);
+
+    struct repeating_timer timer; // variável de armazenamento das informações da função de timer repetitivo
+    // habilita o timer usado nos acionamentos dos LEDs.
+    add_repeating_timer_ms(3000, repeating_timer_callback, NULL, &timer);
 
     while (true)
     {
