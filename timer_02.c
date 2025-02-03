@@ -3,15 +3,27 @@
 
 #define BUTTON_A 5
 
+// variáveis auxiliares para deboucing
+volatile uint32_t last_time = 0;
+volatile uint32_t current_time = 0;
+
 // interrupção
 void gpio_button_callback(uint gpio, uint32_t events)
 {
 
-    if (gpio_get(BUTTON_A) == 0) // condicional que verifica o nível lógico do botão
+    // obtem o tempo atual desde o boot
+    current_time = to_us_since_boot(get_absolute_time());
+    // condicional que verifica o intervalo entre o tempo inicial do boot e o tempo atual,
+    // em comparação ao tempo estimado de estabilidade do botão, uma contrapedida debouncing
+    if (current_time - last_time > 250000) // 250 ms de debouncing
     {
-        printf("gpio_button_callback\n");
-    }
+        last_time = current_time; // atualiza o tempo da última ação no botão
 
+        if (gpio_get(BUTTON_A) == 0) // condicional que verifica o nível lógico do botão
+        {
+            printf("gpio_button_callback\n");
+        }
+    }
     gpio_acknowledge_irq(gpio, events); // limpa a interrupção
 }
 
@@ -28,7 +40,7 @@ int main()
     gpio_set_dir(BUTTON_A, GPIO_IN);
     gpio_pull_up(BUTTON_A);
 
-   // habilita uma interrupção para indentificar quando o botão for pressionado
+    // habilita uma interrupção para indentificar quando o botão for pressionado
     gpio_set_irq_enabled_with_callback(BUTTON_A, GPIO_IRQ_EDGE_FALL, true, &gpio_button_callback);
 
     while (true)
