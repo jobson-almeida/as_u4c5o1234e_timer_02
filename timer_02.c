@@ -3,14 +3,30 @@
 
 #define BUTTON_A 5
 
-// variáveis auxiliares para deboucing
-volatile uint32_t last_time = 0;
-volatile uint32_t current_time = 0;
+volatile uint32_t last_time = 0;    // variáveis auxiliares para deboucing
+volatile uint32_t current_time = 0; // variáveis auxiliares para deboucing
+volatile size_t index_led = 0;      // variável para interação de acionamento dos LEDs
+
+uint8_t onoff_led_mask[3] = {0x07, 0x06, 0x04}; // máscadas de acionamento dos LEDs - 0111 | 0110 | 0100
 
 // timer de acionamento dos LEDs
 bool repeating_timer_callback(struct repeating_timer *t)
 {
     printf("repeating_timer_callback\n");
+
+    if (index_led < 3) // condicional de confirmação de pressionamento do botão e interação do loop
+    {
+
+        // aplica a máscara de acionamento dos LEDs de acordo o indexes correspondentes
+        gpio_put_masked((0x07 << 11), (onoff_led_mask[index_led] << 11));
+
+        index_led++;
+    }
+    else
+    {
+        index_led = 0;
+        gpio_put_masked((0x07 << 11), (0x00 << 11));
+    }
 
     return true;
 }
