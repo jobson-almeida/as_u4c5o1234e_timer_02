@@ -7,9 +7,7 @@
 
 volatile uint32_t last_time = 0;    // variáveis auxiliares para deboucing
 volatile uint32_t current_time = 0; // variáveis auxiliares para deboucing
-
 volatile size_t index_led = 0; // variável para interação de acionamento dos LEDs
-
 volatile bool button_pressed = false;  // status de botão pressionado
 volatile bool change_delay_ms = false; // status para alteração do delay_ms da função do timer
 
@@ -17,17 +15,22 @@ struct repeating_timer timer; // variável de armazenamento das informações da
 
 uint8_t onoff_led_mask[3] = {0x07, 0x06, 0x04}; // máscadas de acionamento dos LEDs - 0111 | 0110 | 0100
 
-
-bool repeating_timer_callback(struct repeating_timer *t); // declaração do protótipo da função
+// declaração do protótipo da função
+bool repeating_timer_callback(struct repeating_timer *t);
 
 // alarme
 int64_t turn_off_callback(alarm_id_t id, void *user_data)
 {
+       gpio_put_masked((0x07 << 11), (0x00 << 11)); // máscara que aplica o nível lógico 0 aos três LEDs
+
     // DEBUGGING
     current_time = to_us_since_boot(get_absolute_time());
     printf("%d\n", current_time - last_time);
 
-    cancel_repeating_timer(&timer);                                      // cancela o timer atual da função 'add_repeating_timer_ms'
+    button_pressed = false; // atualiza a variável que representado o status de pressionamento do botão 
+    index_led = 0;          // atualiza varíavel de indexes das maáscaras de acionamento dos LEDs
+
+    cancel_repeating_timer(&timer);                                                // cancela o timer atual da função 'add_repeating_timer_ms'
     add_repeating_timer_ms(FAST_DELAY_MS, repeating_timer_callback, NULL, &timer); // atualiza o timer da função 'add_repeating_timer_ms' para um novo pressionamento do botão
 
     return 0; // finaliza o alarme
@@ -57,13 +60,7 @@ bool repeating_timer_callback(struct repeating_timer *t)
         gpio_put_masked((0x07 << 11), (onoff_led_mask[index_led] << 11));
 
         index_led++;
-    }
-    else
-    {
-        index_led = 0;
-        button_pressed = false;
-        gpio_put_masked((0x07 << 11), (0x00 << 11));
-    }
+    } 
 
     return true;
 }
