@@ -23,9 +23,8 @@ int64_t turn_off_callback(alarm_id_t id, void *user_data)
 {
     gpio_put_masked((0x07 << 11), (0x00 << 11)); // máscara que aplica o nível lógico 0 aos três LEDs
 
-    // DEBUGGING
-    current_time = to_us_since_boot(get_absolute_time());
-    printf("%d\n", current_time - last_time);
+    // current_time = to_us_since_boot(get_absolute_time());
+    // printf("%d\n", (current_time - last_time) / 1000); // DEBUGGING: mede o tempo total dos acionamentos e do alarme
 
     button_pressed = false; // atualiza a variável que representado o status de pressionamento do botão
     index_led = 0;          // atualiza varíavel de indexes das maáscaras de acionamento dos LEDs
@@ -38,9 +37,7 @@ int64_t turn_off_callback(alarm_id_t id, void *user_data)
 
 // timer de acionamento dos LEDs
 bool repeating_timer_callback(struct repeating_timer *t)
-{
-    printf("repeating_timer_callback\n");
-
+{ 
     // condicional de confirmação de detecção de pressionamento do botão e alteração do delay de acionamento dos LEDs
     if (button_pressed && change_delay_ms)
     {
@@ -58,6 +55,10 @@ bool repeating_timer_callback(struct repeating_timer *t)
 
         // aplica a máscara de acionamento dos LEDs de acordo o indexes correspondentes
         gpio_put_masked((0x07 << 11), (onoff_led_mask[index_led] << 11));
+   
+        // current_time = to_us_since_boot(get_absolute_time());
+        // if (index_led > 0)
+        //     printf("%d\n", (current_time - last_time) / 1000); // DEBUGGING: mede o tempo de cada acionamento
 
         index_led++;
     }
