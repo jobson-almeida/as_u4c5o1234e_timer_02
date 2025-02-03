@@ -3,17 +3,32 @@
 
 #define BUTTON_A 5
 
-volatile uint32_t last_time = 0;    // variáveis auxiliares para deboucing
-volatile uint32_t current_time = 0; // variáveis auxiliares para deboucing
-volatile size_t index_led = 0;      // variável para interação de acionamento dos LEDs
-volatile bool button_pressed = false;  // status de botão pressionado
+volatile uint32_t last_time = 0;      // variáveis auxiliares para deboucing
+volatile uint32_t current_time = 0;   // variáveis auxiliares para deboucing
+volatile size_t index_led = 0;        // variável para interação de acionamento dos LEDs
+volatile bool button_pressed = false; // status de botão pressionado
 
 uint8_t onoff_led_mask[3] = {0x07, 0x06, 0x04}; // máscadas de acionamento dos LEDs - 0111 | 0110 | 0100
+
+// alarme
+int64_t turn_off_callback(alarm_id_t id, void *user_data)
+{
+    // DEBUGGING
+    current_time = to_us_since_boot(get_absolute_time());
+    printf("%d\n", current_time - last_time);
+
+    return 0; // finaliza o alarme
+}
 
 // timer de acionamento dos LEDs
 bool repeating_timer_callback(struct repeating_timer *t)
 {
     printf("repeating_timer_callback\n");
+
+    if (button_pressed && index_led == 0)
+    {
+        add_alarm_in_ms(9000, turn_off_callback, NULL, false); // adiciona um alarme com delay de acionamento de 9 segundos
+    }
 
     if (button_pressed && index_led < 3) // condicional de confirmação de pressionamento do botão e interação do loop
     {
