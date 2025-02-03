@@ -2,13 +2,23 @@
 #include "pico/stdlib.h"
 
 #define BUTTON_A 5
+#define FAST_DELAY_MS 100
+#define SLOW_DELAY_MS 3000
 
-volatile uint32_t last_time = 0;      // variáveis auxiliares para deboucing
-volatile uint32_t current_time = 0;   // variáveis auxiliares para deboucing
-volatile size_t index_led = 0;        // variável para interação de acionamento dos LEDs
-volatile bool button_pressed = false; // status de botão pressionado
+volatile uint32_t last_time = 0;    // variáveis auxiliares para deboucing
+volatile uint32_t current_time = 0; // variáveis auxiliares para deboucing
+
+volatile size_t index_led = 0; // variável para interação de acionamento dos LEDs
+
+volatile bool button_pressed = false;  // status de botão pressionado
+volatile bool change_delay_ms = false; // status para alteração do delay_ms da função do timer
+
+struct repeating_timer timer; // variável de armazenamento das informações da função de timer repetitivo
 
 uint8_t onoff_led_mask[3] = {0x07, 0x06, 0x04}; // máscadas de acionamento dos LEDs - 0111 | 0110 | 0100
+
+
+bool repeating_timer_callback(struct repeating_timer *t); // declaração do protótipo da função
 
 // alarme
 int64_t turn_off_callback(alarm_id_t id, void *user_data)
@@ -16,6 +26,9 @@ int64_t turn_off_callback(alarm_id_t id, void *user_data)
     // DEBUGGING
     current_time = to_us_since_boot(get_absolute_time());
     printf("%d\n", current_time - last_time);
+
+    cancel_repeating_timer(&timer);                                      // cancela o timer atual da função 'add_repeating_timer_ms'
+    add_repeating_timer_ms(FAST_DELAY_MS, repeating_timer_callback, NULL, &timer); // atualiza o timer da função 'add_repeating_timer_ms' para um novo pressionamento do botão
 
     return 0; // finaliza o alarme
 }
@@ -25,8 +38,15 @@ bool repeating_timer_callback(struct repeating_timer *t)
 {
     printf("repeating_timer_callback\n");
 
-    if (button_pressed && index_led == 0)
+    // condicional de confirmação de detecção de pressionamento do botão e alteração do delay de acionamento dos LEDs
+    if (button_pressed && change_delay_ms)
     {
+        change_delay_ms = false;
+        // cancela o timer atual de detecção do botão em preparação a troca do valor delay_ms
+        cancel_repeating_timer(&timer);
+        // aplica o delay adequado para a interação e acionamento dos LEDs.
+        // utilizar uma combinação de valores permite uma fluidez e sincronia ao primeiro acionamento
+        add_repeating_timer_ms(SLOW_DELAY_MS, repeating_timer_callback, NULL, &timer);
         add_alarm_in_ms(9000, turn_off_callback, NULL, false); // adiciona um alarme com delay de acionamento de 9 segundos
     }
 
@@ -56,13 +76,14 @@ void gpio_button_callback(uint gpio, uint32_t events)
     current_time = to_us_since_boot(get_absolute_time());
     // condicional que verifica o intervalo entre o tempo inicial do boot e o tempo atual,
     // em comparação ao tempo estimado de estabilidade do botão, uma contrapedida debouncing
-    if (current_time - last_time > 250000) // 250 ms de debouncing
+    if (current_time - last_time > 200000) // 200 ms de debouncing
     {
         last_time = current_time; // atualiza o tempo da última ação no botão
 
         if (gpio_get(BUTTON_A) == 0) // condicional que verifica o nível lógico do botão
         {
             button_pressed = true;
+            change_delay_ms = true;
             printf("gpio_button_callback\n");
         }
     }
@@ -85,9 +106,8 @@ int main()
     // habilita uma interrupção para indentificar quando o botão for pressionado
     gpio_set_irq_enabled_with_callback(BUTTON_A, GPIO_IRQ_EDGE_FALL, true, &gpio_button_callback);
 
-    struct repeating_timer timer; // variável de armazenamento das informações da função de timer repetitivo
     // habilita o timer usado nos acionamentos dos LEDs.
-    add_repeating_timer_ms(3000, repeating_timer_callback, NULL, &timer);
+    add_repeating_timer_ms(FAST_DELAY_MS, repeating_timer_callback, NULL, &timer);
 
     while (true)
     {
